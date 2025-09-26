@@ -46,6 +46,7 @@ async function selectSet(setId){
   state.index = 0;
   state.showTranslation = false;
   render();
+  ensureProperSizing(); // Ensure sizing after set change
   toast(`Loaded: ${set.name}`);
 }
 
@@ -73,6 +74,36 @@ function render(){
   els.translation.textContent = item.translation;
   els.translation.hidden = !state.showTranslation;
   els.position.textContent = `${state.index + 1}/${state.items.length}`;
+  // Ensure proper sizing after render
+  ensureProperSizing();
+}
+
+function ensureProperSizing(){
+  // Force layout recalculation to ensure card fits within viewport
+  requestAnimationFrame(() => {
+    const viewport = els.card.parentElement;
+    if (viewport) {
+      const viewportRect = viewport.getBoundingClientRect();
+      const cardRect = els.card.getBoundingClientRect();
+
+      // Debug logging
+      console.log('Viewport:', viewportRect.width, 'x', viewportRect.height);
+      console.log('Card:', cardRect.width, 'x', cardRect.height);
+
+      // If card is larger than viewport, force it to fit
+      if (cardRect.height > viewportRect.height || cardRect.width > viewportRect.width) {
+        const newWidth = Math.min(720, viewportRect.width * 0.96);
+        const newHeight = Math.min(viewportRect.height, 560);
+        console.log('Resizing card to:', newWidth, 'x', newHeight);
+        els.card.style.width = newWidth + 'px';
+        els.card.style.height = newHeight + 'px';
+      } else {
+        // Reset to CSS defaults if within bounds
+        els.card.style.width = '';
+        els.card.style.height = '';
+      }
+    }
+  });
 }
 
 function next(){
@@ -106,6 +137,12 @@ function bindControls(){
     else if(e.key === 'ArrowLeft') prev();
     else if(e.key === ' ' || e.key.toLowerCase() === 't') toggleTranslation();
   });
+  // Handle window resize to ensure proper sizing
+  window.addEventListener('resize', ensureProperSizing);
+  // Handle orientation change
+  window.addEventListener('orientationchange', () => {
+    setTimeout(ensureProperSizing, 100);
+  });
   bindGestures();
 }
 
@@ -113,6 +150,7 @@ function bindGestures(){
   let startX = 0, startY = 0, isTouch = false, hasMoved = false;
   const threshold = 40; // px
   const maxY = 60; // Ignore if too vertical
+  const maxTransform = 120; // Max transform distance
 
   function onStart(clientX, clientY){
     startX = clientX; startY = clientY; isTouch = true; hasMoved = false;
@@ -122,14 +160,19 @@ function bindGestures(){
     const dx = clientX - startX; const dy = Math.abs(clientY - startY);
     if (dy > maxY) return;
     if (Math.abs(dx) > 6) hasMoved = true;
-    els.card.style.transform = `translateX(${Math.max(-120, Math.min(120, dx))}px)`;
-    els.card.style.transition = 'transform 0s';
+    const clampedDx = Math.max(-maxTransform, Math.min(maxTransform, dx));
+    els.card.style.transform = `translateX(${clampedDx}px)`;
+    els.card.style.transition = 'none';
   }
   function onEnd(clientX){
     if(!isTouch) return; isTouch = false;
     const dx = clientX - startX;
-    els.card.style.transition = 'transform .2s ease';
-    els.card.style.transform = 'translateX(0)';
+    els.card.style.transition = 'transform 0.2s ease';
+    els.card.style.transform = 'translateX(0px)';
+
+    // Force a layout recalculation to ensure proper sizing
+    els.card.offsetHeight;
+
     if(!hasMoved) return;
     if (dx <= -threshold) next();
     else if (dx >= threshold) prev();
@@ -167,7 +210,10 @@ function toast(message){
 }
 
 bindControls();
-loadData().catch(err=>{
+loadData().then(() => {
+  // Ensure proper sizing after initial data load
+  setTimeout(ensureProperSizing, 100);
+}).catch(err=>{
   console.error(err);
   toast('Failed to load data');
 });
