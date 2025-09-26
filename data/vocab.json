@@ -5,12 +5,6 @@
       "name": "Animals",
       "items": [
         {
-          "word": "Banana",
-          "image": "/assets/img/banana.svg",
-          "sentence": "The monkey quickly grabbed a ripe banana from the tall tree.",
-          "translation": "香蕉"
-        },
-        {
           "word": "Cat",
           "image": "/assets/img/cat.svg",
           "sentence": "The cat curled up on the sunny windowsill.",
@@ -33,6 +27,12 @@
           "image": "/assets/img/apple.svg",
           "sentence": "She sliced the crisp apple for a snack.",
           "translation": "苹果"
+        },
+        {
+          "word": "Banana",
+          "image": "/assets/img/banana.svg",
+          "sentence": "The monkey quickly grabbed a ripe banana from the tall tree.",
+          "translation": "香蕉"
         },
         {
           "word": "Bread",
