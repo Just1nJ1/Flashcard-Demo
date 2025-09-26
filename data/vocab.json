@@ -1,0 +1,77 @@
+{
+  "sets": [
+    {
+      "id": "animals",
+      "name": "Animals",
+      "items": [
+        {
+          "word": "Banana",
+          "image": "/assets/img/banana.svg",
+          "sentence": "The monkey quickly grabbed a ripe banana from the tall tree.",
+          "translation": "香蕉"
+        },
+        {
+          "word": "Cat",
+          "image": "/assets/img/cat.svg",
+          "sentence": "The cat curled up on the sunny windowsill.",
+          "translation": "猫"
+        },
+        {
+          "word": "Elephant",
+          "image": "/assets/img/elephant.svg",
+          "sentence": "The elephant splashed water with its trunk.",
+          "translation": "大象"
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "name": "Food",
+      "items": [
+        {
+          "word": "Apple",
+          "image": "/assets/img/apple.svg",
+          "sentence": "She sliced the crisp apple for a snack.",
+          "translation": "苹果"
+        },
+        {
+          "word": "Bread",
+          "image": "/assets/img/bread.svg",
+          "sentence": "Fresh bread filled the kitchen with a warm aroma.",
+          "translation": "面包"
+        },
+        {
+          "word": "Tea",
+          "image": "/assets/img/tea.svg",
+          "sentence": "He brewed a cup of tea to relax.",
+          "translation": "茶"
+        }
+      ]
+    },
+    {
+      "id": "travel",
+      "name": "Travel",
+      "items": [
+        {
+          "word": "Airport",
+          "image": "/assets/img/airport.svg",
+          "sentence": "We arrived at the airport two hours early.",
+          "translation": "机场"
+        },
+        {
+          "word": "Hotel",
+          "image": "/assets/img/hotel.svg",
+          "sentence": "The hotel room had a beautiful ocean view.",
+          "translation": "酒店"
+        },
+        {
+          "word": "Ticket",
+          "image": "/assets/img/ticket.svg",
+          "sentence": "She printed her train ticket before leaving.",
+          "translation": "票"
+        }
+      ]
+    }
+  ]
+}
+

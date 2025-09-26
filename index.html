@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Vocab Cards</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0b1020">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">Vocab Cards</div>
+    <select id="setSelect" class="set-select" aria-label="Select vocabulary set"></select>
+  </header>
+
+  <main class="viewport" id="viewport">
+    <section class="card" id="card" tabindex="0" aria-live="polite">
+      <div class="media"><img id="image" alt=""/></div>
+      <div class="text">
+        <h1 id="word" class="word">—</h1>
+        <p id="sentence" class="sentence">—</p>
+        <p id="translation" class="translation" hidden>—</p>
+      </div>
+      <div class="hint">Tap card to toggle translation • Swipe ⇄</div>
+    </section>
+  </main>
+
+  <footer class="toolbar">
+    <button id="prevBtn" class="nav-btn" aria-label="Previous">
+      <img src="/assets/icons/chevron-left.svg" alt=""/>
+    </button>
+    <div class="position" id="position">1/1</div>
+    <button id="nextBtn" class="nav-btn" aria-label="Next">
+      <img src="/assets/icons/chevron-right.svg" alt=""/>
+    </button>
+  </footer>
+
+  <script src="/app.js" type="module"></script>
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
+  <noscript>This app requires JavaScript enabled.</noscript>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+<!-- Images from placeholders; replace with your own assets. -->
+</html>
+
