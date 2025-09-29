@@ -148,19 +148,15 @@ function ensureProperSizing(){
 }
 
 function next(){
-  if(state.index < state.items.length - 1){
-    state.index++;
-    state.showTranslation = false;
-    render();
-  }
+  state.index = (state.index + 1) % state.items.length;
+  state.showTranslation = false;
+  render();
 }
 
 function prev(){
-  if(state.index > 0){
-    state.index--;
-    state.showTranslation = false;
-    render();
-  }
+  state.index = (state.index - 1 + state.items.length) % state.items.length;
+  state.showTranslation = false;
+  render();
 }
 
 function toggleTranslation(){
