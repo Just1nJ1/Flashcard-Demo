@@ -10,19 +10,44 @@
 </head>
 <body>
   <header class="app-header">
-    <div class="brand">Vocab Cards</div>
+    <div class="brand-section">
+      <div class="brand">Vocab Cards</div>
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+    </div>
     <select id="setSelect" class="set-select" aria-label="Select vocabulary set"></select>
   </header>
 
   <main class="viewport" id="viewport">
-    <section class="card" id="card" tabindex="0" aria-live="polite">
-      <div class="media"><img id="image" alt=""/></div>
-      <div class="text">
-        <h1 id="word" class="word">—</h1>
-        <p id="sentence" class="sentence">—</p>
-        <p id="translation" class="translation" hidden>—</p>
+    <!-- Category Selection Screen -->
+    <section class="category-screen" id="categoryScreen">
+      <div class="category-header">
+        <h1>Choose a Category</h1>
+        <p>Select a vocabulary set to practice</p>
       </div>
-      <div class="hint">Tap card to toggle translation • Swipe ⇄</div>
+      <div class="category-grid" id="categoryGrid">
+        <!-- Categories will be populated by JavaScript -->
+      </div>
+    </section>
+    
+    <!-- Flash Card Screen -->
+    <section class="card-screen" id="cardScreen" style="display: none;">
+      <button class="back-btn" id="backBtn" aria-label="Back to categories">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        <span>Categories</span>
+      </button>
+      <section class="card" id="card" tabindex="0" aria-live="polite">
+        <div class="media"><img id="image" alt=""/></div>
+        <div class="text">
+          <h1 id="word" class="word">—</h1>
+          <p id="sentence" class="sentence">—</p>
+          <p id="translation" class="translation" hidden>—</p>
+        </div>
+        <div class="hint">Tap card to toggle translation • Swipe ⇄</div>
+      </section>
     </section>
   </main>
 

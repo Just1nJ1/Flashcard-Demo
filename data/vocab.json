@@ -3,6 +3,7 @@
     {
       "id": "animals",
       "name": "Animals",
+      "emoji": "🦁",
       "items": [
         {
           "word": "Cat",
@@ -21,6 +22,7 @@
     {
       "id": "food",
       "name": "Food",
+      "emoji": "🍎",
       "items": [
         {
           "word": "Apple",
@@ -51,6 +53,7 @@
     {
       "id": "travel",
       "name": "Travel",
+      "emoji": "✈️",
       "items": [
         {
           "word": "Airport",

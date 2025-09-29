@@ -4,6 +4,7 @@ const state = {
   items: [],
   index: 0,
   showTranslation: false,
+  currentView: 'categories', // 'categories' or 'cards'
 };
 
 const els = {
@@ -17,6 +18,13 @@ const els = {
   prevBtn: document.getElementById('prevBtn'),
   nextBtn: document.getElementById('nextBtn'),
   toast: document.getElementById('toast'),
+  themeToggle: document.getElementById('themeToggle'),
+  themeIcon: document.querySelector('.theme-icon'),
+  categoryScreen: document.getElementById('categoryScreen'),
+  cardScreen: document.getElementById('cardScreen'),
+  categoryGrid: document.getElementById('categoryGrid'),
+  backBtn: document.getElementById('backBtn'),
+  toolbar: document.querySelector('.toolbar'),
 };
 
 async function loadData(){
@@ -25,15 +33,12 @@ async function loadData(){
   const data = await res.json();
   state.sets = data.sets || [];
   renderSetOptions();
-  const preferred = localStorage.getItem('vocab.set') || state.sets[0]?.id;
-  if (preferred) {
-    els.setSelect.value = preferred;
-  }
-  await selectSet(els.setSelect.value);
+  renderCategories();
+  showView('categories');
 }
 
 function renderSetOptions(){
-  els.setSelect.innerHTML = state.sets.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  els.setSelect.innerHTML = state.sets.map(s => `<option value="${s.id}">${s.emoji} ${escapeHtml(s.name)}</option>`).join('');
   els.setSelect.addEventListener('change', () => selectSet(els.setSelect.value));
 }
 
@@ -46,8 +51,43 @@ async function selectSet(setId){
   state.index = 0;
   state.showTranslation = false;
   render();
+  showView('cards');
   ensureProperSizing(); // Ensure sizing after set change
-  toast(`Loaded: ${set.name}`);
+  toast(`Loaded: ${set.emoji} ${set.name}`);
+}
+
+function renderCategories(){
+  els.categoryGrid.innerHTML = state.sets.map(set => `
+    <div class="category-card" data-set-id="${set.id}">
+      <span class="category-emoji">${set.emoji}</span>
+      <h2 class="category-name">${escapeHtml(set.name)}</h2>
+      <p class="category-count">${set.items.length} words</p>
+    </div>
+  `).join('');
+  
+  // Add click handlers to category cards
+  els.categoryGrid.addEventListener('click', (e) => {
+    const card = e.target.closest('.category-card');
+    if (card) {
+      const setId = card.dataset.setId;
+      selectSet(setId);
+    }
+  });
+}
+
+function showView(view){
+  state.currentView = view;
+  if (view === 'categories') {
+    els.categoryScreen.style.display = 'flex';
+    els.cardScreen.style.display = 'none';
+    els.toolbar.style.display = 'none';
+    els.setSelect.style.display = 'none';
+  } else {
+    els.categoryScreen.style.display = 'none';
+    els.cardScreen.style.display = 'grid';
+    els.toolbar.style.display = 'flex';
+    els.setSelect.style.display = 'block';
+  }
 }
 
 function shuffle(arr){
@@ -127,10 +167,34 @@ function toggleTranslation(){
   els.translation.hidden = !state.showTranslation;
 }
 
+function initTheme(){
+  const savedTheme = localStorage.getItem('vocab.theme') || 'dark';
+  applyTheme(savedTheme);
+  els.themeToggle.addEventListener('click', toggleTheme);
+}
+
+function toggleTheme(){
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+  localStorage.setItem('vocab.theme', newTheme);
+}
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  els.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  // Update meta theme-color for mobile browsers
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+  if (metaThemeColor) {
+    metaThemeColor.content = theme === 'dark' ? '#0b1020' : '#f5f7fa';
+  }
+}
+
 function bindControls(){
   els.nextBtn.addEventListener('click', next);
   els.prevBtn.addEventListener('click', prev);
   els.card.addEventListener('click', toggleTranslation);
+  els.backBtn.addEventListener('click', () => showView('categories'));
   // Keyboard support
   window.addEventListener('keydown', (e)=>{
     if(e.key === 'ArrowRight') next();
@@ -209,6 +273,7 @@ function toast(message){
   els.toast._t = setTimeout(()=>{ els.toast.hidden = true; }, 1200);
 }
 
+initTheme();
 bindControls();
 loadData().then(() => {
   // Ensure proper sizing after initial data load
