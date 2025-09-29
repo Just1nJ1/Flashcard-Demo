@@ -4,6 +4,13 @@ const state = {
   items: [],
   index: 0,
   showTranslation: false,
+  currentTheme: 'dark',
+  showCategoryScreen: true,
+  categoryEmojis: {
+    'animals': '🐾',
+    'food': '🍎',
+    'travel': '✈️'
+  }
 };
 
 const els = {
@@ -17,7 +24,47 @@ const els = {
   prevBtn: document.getElementById('prevBtn'),
   nextBtn: document.getElementById('nextBtn'),
   toast: document.getElementById('toast'),
+  themeToggle: document.getElementById('themeToggle'),
+  themeIcon: document.getElementById('themeIcon'),
+  categorySelect: document.getElementById('categorySelect'),
+  selectedCategoryEmoji: document.getElementById('selectedCategoryEmoji'),
+  selectedCategoryName: document.getElementById('selectedCategoryName'),
+  categoryScreen: document.getElementById('categoryScreen'),
+  categoryGrid: document.getElementById('categoryGrid'),
+  viewport: document.getElementById('viewport'),
 };
+
+function initializeTheme() {
+  const savedTheme = localStorage.getItem('vocab.theme') || 'dark';
+  state.currentTheme = savedTheme;
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeIcon();
+  updateThemeColor();
+}
+
+function updateThemeIcon() {
+  if (state.currentTheme === 'dark') {
+    els.themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  } else {
+    els.themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  }
+}
+
+function updateThemeColor() {
+  const themeColor = state.currentTheme === 'dark' ? '#0b1020' : '#f8fafc';
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+  if (metaThemeColor) {
+    metaThemeColor.setAttribute('content', themeColor);
+  }
+}
+
+function toggleTheme() {
+  state.currentTheme = state.currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', state.currentTheme);
+  localStorage.setItem('vocab.theme', state.currentTheme);
+  updateThemeIcon();
+  updateThemeColor();
+}
 
 async function loadData(){
   const res = await fetch('/data/vocab.json');
@@ -25,16 +72,49 @@ async function loadData(){
   const data = await res.json();
   state.sets = data.sets || [];
   renderSetOptions();
+  renderCategoryScreen();
   const preferred = localStorage.getItem('vocab.set') || state.sets[0]?.id;
   if (preferred) {
-    els.setSelect.value = preferred;
+    await selectSet(preferred);
+    showFlashcardView();
+  } else {
+    showCategoryScreen();
   }
-  await selectSet(els.setSelect.value);
 }
 
 function renderSetOptions(){
   els.setSelect.innerHTML = state.sets.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
   els.setSelect.addEventListener('change', () => selectSet(els.setSelect.value));
+}
+
+function renderCategoryScreen() {
+  els.categoryGrid.innerHTML = state.sets.map(set => `
+    <div class="category-card" data-set-id="${set.id}">
+      <div class="category-emoji">${state.categoryEmojis[set.id] || '📚'}</div>
+      <h3 class="category-name">${escapeHtml(set.name)}</h3>
+    </div>
+  `).join('');
+
+  // Add click handlers to category cards
+  els.categoryGrid.querySelectorAll('.category-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const setId = card.dataset.setId;
+      selectSet(setId);
+      showFlashcardView();
+    });
+  });
+}
+
+function showCategoryScreen() {
+  state.showCategoryScreen = true;
+  els.categoryScreen.classList.add('active');
+  els.viewport.style.display = 'none';
+}
+
+function showFlashcardView() {
+  state.showCategoryScreen = false;
+  els.categoryScreen.classList.remove('active');
+  els.viewport.style.display = 'grid';
 }
 
 async function selectSet(setId){
@@ -45,9 +125,22 @@ async function selectSet(setId){
   state.order = shuffle(Array.from({length: state.items.length}, (_, i) => i));
   state.index = 0;
   state.showTranslation = false;
+
+  // Update category selection display
+  updateCategorySelection(set);
+
   render();
   ensureProperSizing(); // Ensure sizing after set change
   toast(`Loaded: ${set.name}`);
+}
+
+function updateCategorySelection(set) {
+  const emoji = state.categoryEmojis[set.id] || '📚';
+  const name = set.name;
+
+  els.selectedCategoryEmoji.textContent = emoji;
+  els.selectedCategoryName.textContent = name;
+  els.setSelect.value = set.id;
 }
 
 function shuffle(arr){
@@ -131,12 +224,21 @@ function bindControls(){
   els.nextBtn.addEventListener('click', next);
   els.prevBtn.addEventListener('click', prev);
   els.card.addEventListener('click', toggleTranslation);
+  els.themeToggle.addEventListener('click', toggleTheme);
+  els.categorySelect.addEventListener('click', showCategoryScreen);
+
   // Keyboard support
   window.addEventListener('keydown', (e)=>{
     if(e.key === 'ArrowRight') next();
     else if(e.key === 'ArrowLeft') prev();
     else if(e.key === ' ' || e.key.toLowerCase() === 't') toggleTranslation();
+    else if(e.key === 'Escape') {
+      if (state.showCategoryScreen) {
+        showFlashcardView();
+      }
+    }
   });
+
   // Handle window resize to ensure proper sizing
   window.addEventListener('resize', ensureProperSizing);
   // Handle orientation change
@@ -210,6 +312,11 @@ function toast(message){
 }
 
 bindControls();
+initializeTheme();
+
+// Hide the old select element
+els.setSelect.style.display = 'none';
+
 loadData().then(() => {
   // Ensure proper sizing after initial data load
   setTimeout(ensureProperSizing, 100);

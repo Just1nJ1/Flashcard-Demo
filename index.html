@@ -11,8 +11,27 @@
 <body>
   <header class="app-header">
     <div class="brand">Vocab Cards</div>
-    <select id="setSelect" class="set-select" aria-label="Select vocabulary set"></select>
+    <div class="header-controls">
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+      <div class="category-select-container">
+        <button id="categorySelect" class="category-select-button" aria-label="Select category">
+          <span id="selectedCategoryEmoji" class="category-emoji-small">🍎</span>
+          <span id="selectedCategoryName">Food</span>
+          <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6,9 12,15 18,9"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </header>
+
+  <div id="categoryScreen" class="category-screen">
+    <div class="category-grid" id="categoryGrid"></div>
+  </div>
 
   <main class="viewport" id="viewport">
     <section class="card" id="card" tabindex="0" aria-live="polite">
