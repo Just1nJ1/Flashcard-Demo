@@ -51,6 +51,7 @@ async function selectSet(setId){
   state.index = 0;
   state.showTranslation = false;
   render();
+  els.setSelect.value = localStorage.getItem('vocab.set') || state.sets[0].id;
   showView('cards');
   ensureProperSizing(); // Ensure sizing after set change
   toast(`Loaded: ${set.emoji} ${set.name}`);
