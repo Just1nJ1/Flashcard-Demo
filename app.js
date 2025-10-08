@@ -4,17 +4,22 @@ const state = {
   items: [],
   index: 0,
   showTranslation: false,
-  currentSetId: null,
+  currentScreen: 'home', // 'home' or 'cards'
+  currentSet: null,
+  theme: localStorage.getItem('vocab.theme') || 'dark',
 };
 
 const els = {
-  themeToggle: document.getElementById('themeToggle'),
-  categoryBtn: document.getElementById('categoryBtn'),
-  categoryEmoji: document.getElementById('categoryEmoji'),
-  categoryName: document.getElementById('categoryName'),
-  categorySheet: document.getElementById('categorySheet'),
+  homeScreen: document.getElementById('homeScreen'),
+  cardScreen: document.getElementById('cardScreen'),
   categoryGrid: document.getElementById('categoryGrid'),
-  closeSheet: document.getElementById('closeSheet'),
+  setSelectBtn: document.getElementById('setSelectBtn'),
+  categoryEmoji: document.getElementById('categoryEmoji'),
+  categoryModal: document.getElementById('categoryModal'),
+  categoryList: document.getElementById('categoryList'),
+  closeModal: document.getElementById('closeModal'),
+  themeToggle: document.getElementById('themeToggle'),
+  themeToggleCard: document.getElementById('themeToggleCard'),
   image: document.getElementById('image'),
   word: document.getElementById('word'),
   sentence: document.getElementById('sentence'),
@@ -32,33 +37,45 @@ async function loadData(){
   const data = await res.json();
   state.sets = data.sets || [];
   renderCategoryGrid();
-  const preferred = localStorage.getItem('vocab.set');
-  if (preferred) {
-    await selectSet(preferred);
-  } else {
-    openCategorySheet();
-  }
-  updateCategoryButton();
+  renderCategoryList();
+  applyTheme();
 }
 
 function renderCategoryGrid(){
-  if(!els.categoryGrid) return;
-  els.categoryGrid.innerHTML = state.sets.map(set => {
-    const count = set.items?.length || 0;
-    const emoji = getEmojiForSet(set);
-    return `<button class="category-card" data-id="${escapeHtml(set.id)}">
-      <span class="emoji">${emoji}</span>
-      <div class="info">
-        <div class="name">${escapeHtml(set.name)}</div>
-        <div class="count">${count} words</div>
+  els.categoryGrid.innerHTML = state.sets.map(set => `
+    <div class="category-card" data-set-id="${set.id}">
+      <div class="category-card-emoji">${set.emoji || '📚'}</div>
+      <h3 class="category-card-name">${escapeHtml(set.name)}</h3>
+      <p class="category-card-count">${set.items.length} cards</p>
+    </div>
+  `).join('');
+  
+  // Add click handlers
+  document.querySelectorAll('.category-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const setId = card.dataset.setId;
+      selectSet(setId);
+    });
+  });
+}
+
+function renderCategoryList(){
+  els.categoryList.innerHTML = state.sets.map(set => `
+    <div class="category-item" data-set-id="${set.id}">
+      <div class="category-item-emoji">${set.emoji || '📚'}</div>
+      <div class="category-item-info">
+        <h4 class="category-item-name">${escapeHtml(set.name)}</h4>
+        <p class="category-item-count">${set.items.length} cards</p>
       </div>
-    </button>`;
-  }).join('');
-  Array.from(els.categoryGrid.querySelectorAll('.category-card')).forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.getAttribute('data-id');
-      await selectSet(id);
-      closeCategorySheet();
+    </div>
+  `).join('');
+  
+  // Add click handlers
+  document.querySelectorAll('.category-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const setId = item.dataset.setId;
+      selectSet(setId);
+      closeModal();
     });
   });
 }
@@ -67,15 +84,61 @@ async function selectSet(setId){
   const set = state.sets.find(s => s.id === setId) || state.sets[0];
   if(!set){ return; }
   localStorage.setItem('vocab.set', set.id);
-  state.currentSetId = set.id;
+  state.currentSet = set;
   state.items = [...set.items];
   state.order = shuffle(Array.from({length: state.items.length}, (_, i) => i));
   state.index = 0;
   state.showTranslation = false;
+  
+  // Update category selector button
+  els.categoryEmoji.textContent = set.emoji || '📚';
+  
+  // Switch to card screen
+  showScreen('cards');
   render();
-  ensureProperSizing(); // Ensure sizing after set change
+  ensureProperSizing();
   toast(`Loaded: ${set.name}`);
-  updateCategoryButton();
+}
+
+function showScreen(screen){
+  state.currentScreen = screen;
+  if(screen === 'home'){
+    els.homeScreen.hidden = false;
+    els.cardScreen.hidden = true;
+  } else {
+    els.homeScreen.hidden = true;
+    els.cardScreen.hidden = false;
+  }
+}
+
+function openModal(){
+  els.categoryModal.hidden = false;
+}
+
+function closeModal(){
+  els.categoryModal.hidden = true;
+}
+
+function toggleTheme(){
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('vocab.theme', state.theme);
+  applyTheme();
+}
+
+function applyTheme(){
+  const root = document.documentElement;
+  root.setAttribute('data-theme', state.theme);
+  
+  // Update theme toggle icons
+  const icon = state.theme === 'dark' ? '🌙' : '☀️';
+  const themeIcons = document.querySelectorAll('.theme-icon');
+  themeIcons.forEach(el => el.textContent = icon);
+  
+  // Update meta theme-color
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if(metaTheme){
+    metaTheme.content = state.theme === 'dark' ? '#0b1020' : '#f5f7fb';
+  }
 }
 
 function shuffle(arr){
@@ -94,10 +157,7 @@ function current(){
 
 function render(){
   const item = current();
-  if(!item){
-    if (els.position) els.position.textContent = '0/0';
-    return;
-  }
+  if(!item){ return; }
   els.image.src = item.image;
   els.image.alt = item.word;
   els.word.textContent = item.word;
@@ -159,34 +219,38 @@ function toggleTranslation(){
 }
 
 function bindControls(){
+  // Card navigation
   els.nextBtn.addEventListener('click', next);
   els.prevBtn.addEventListener('click', prev);
   els.card.addEventListener('click', toggleTranslation);
-  // Theme toggle
-  if (els.themeToggle){
-    els.themeToggle.addEventListener('click', toggleTheme);
-  }
-  // Category sheet controls
-  if (els.categoryBtn){
-    els.categoryBtn.addEventListener('click', ()=>{
-      if(els.categorySheet.hidden) openCategorySheet(); else closeCategorySheet();
-    });
-  }
-  if (els.closeSheet){
-    els.closeSheet.addEventListener('click', closeCategorySheet);
-  }
+  
+  // Theme toggles
+  els.themeToggle.addEventListener('click', toggleTheme);
+  els.themeToggleCard.addEventListener('click', toggleTheme);
+  
+  // Category selection
+  els.setSelectBtn.addEventListener('click', openModal);
+  els.closeModal.addEventListener('click', closeModal);
+  els.categoryModal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+  
   // Keyboard support
   window.addEventListener('keydown', (e)=>{
-    if(e.key === 'ArrowRight') next();
-    else if(e.key === 'ArrowLeft') prev();
-    else if(e.key === ' ' || e.key.toLowerCase() === 't') toggleTranslation();
+    if(state.currentScreen === 'cards'){
+      if(e.key === 'ArrowRight') next();
+      else if(e.key === 'ArrowLeft') prev();
+      else if(e.key === ' ' || e.key.toLowerCase() === 't') toggleTranslation();
+      else if(e.key === 'Escape' && !els.categoryModal.hidden) closeModal();
+    }
   });
+  
   // Handle window resize to ensure proper sizing
   window.addEventListener('resize', ensureProperSizing);
+  
   // Handle orientation change
   window.addEventListener('orientationchange', () => {
     setTimeout(ensureProperSizing, 100);
   });
+  
   bindGestures();
 }
 
@@ -253,61 +317,10 @@ function toast(message){
   els.toast._t = setTimeout(()=>{ els.toast.hidden = true; }, 1200);
 }
 
-// Category helpers
-function getEmojiForSet(set){
-  const id = (set.id || '').toLowerCase();
-  const name = (set.name || '').toLowerCase();
-  if(id.includes('food') || name.includes('food')) return '🍎';
-  if(id.includes('animal') || name.includes('animal')) return '🐾';
-  if(id.includes('travel') || name.includes('travel')) return '✈️';
-  return '📚';
-}
-
-function updateCategoryButton(){
-  if(!els.categoryName || !els.categoryEmoji) return;
-  const set = state.sets.find(s => s.id === state.currentSetId);
-  if(set){
-    els.categoryName.textContent = set.name;
-    els.categoryEmoji.textContent = getEmojiForSet(set);
-  } else {
-    els.categoryName.textContent = 'Choose';
-    els.categoryEmoji.textContent = '📚';
-  }
-}
-
-function openCategorySheet(){
-  if(els.categorySheet){ els.categorySheet.hidden = false; }
-}
-function closeCategorySheet(){
-  if(els.categorySheet){ els.categorySheet.hidden = true; }
-}
-
-// Theme
-function applyTheme(theme){
-  const root = document.documentElement;
-  if(theme === 'light') root.classList.add('light'); else root.classList.remove('light');
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta){ meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#0b1020'); }
-  if(els.themeToggle){ els.themeToggle.textContent = theme === 'light' ? '☀️' : '🌙'; }
-}
-function initTheme(){
-  const stored = localStorage.getItem('vocab.theme');
-  const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-  const theme = stored || (systemPrefersLight ? 'light' : 'dark');
-  applyTheme(theme);
-}
-function toggleTheme(){
-  const isLight = document.documentElement.classList.contains('light');
-  const next = isLight ? 'dark' : 'light';
-  localStorage.setItem('vocab.theme', next);
-  applyTheme(next);
-}
-
 bindControls();
-initTheme();
 loadData().then(() => {
-  // Ensure proper sizing after initial data load
-  setTimeout(ensureProperSizing, 100);
+  // Show home screen initially
+  showScreen('home');
 }).catch(err=>{
   console.error(err);
   toast('Failed to load data');

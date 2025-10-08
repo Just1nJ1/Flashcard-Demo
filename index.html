@@ -9,47 +9,66 @@
   <meta name="theme-color" content="#0b1020">
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-left">
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">🌙</button>
+  <!-- Home Screen -->
+  <div id="homeScreen" class="home-screen">
+    <header class="app-header">
       <div class="brand">Vocab Cards</div>
-    </div>
-    <button id="categoryBtn" class="category-btn" aria-haspopup="dialog" aria-controls="categorySheet">
-      <span id="categoryEmoji" class="emoji">📚</span>
-      <span id="categoryName" class="name">Choose</span>
-      <span class="caret">▾</span>
-    </button>
-  </header>
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+    </header>
+    <main class="home-content">
+      <h2 class="home-title">Select a Category</h2>
+      <div id="categoryGrid" class="category-grid"></div>
+    </main>
+  </div>
 
-  <main class="viewport" id="viewport">
-    <section class="card" id="card" tabindex="0" aria-live="polite">
-      <div class="media"><img id="image" alt=""/></div>
-      <div class="text">
-        <h1 id="word" class="word">—</h1>
-        <p id="sentence" class="sentence">—</p>
-        <p id="translation" class="translation" hidden>—</p>
+  <!-- Card Study Screen -->
+  <div id="cardScreen" class="card-screen" hidden>
+    <header class="app-header">
+      <button id="themeToggleCard" class="theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+      <button id="setSelectBtn" class="set-select-btn" aria-label="Select vocabulary set">
+        <span id="categoryEmoji" class="category-emoji">🍎</span>
+        <span class="dropdown-arrow">▼</span>
+      </button>
+    </header>
+
+    <main class="viewport" id="viewport">
+      <section class="card" id="card" tabindex="0" aria-live="polite">
+        <div class="media"><img id="image" alt=""/></div>
+        <div class="text">
+          <h1 id="word" class="word">—</h1>
+          <p id="sentence" class="sentence">—</p>
+          <p id="translation" class="translation" hidden>—</p>
+        </div>
+        <div class="hint">Tap card to toggle translation • Swipe ⇄</div>
+      </section>
+    </main>
+
+    <footer class="toolbar">
+      <button id="prevBtn" class="nav-btn" aria-label="Previous">
+        <img src="/assets/icons/chevron-left.svg" alt=""/>
+      </button>
+      <div class="position" id="position">1/1</div>
+      <button id="nextBtn" class="nav-btn" aria-label="Next">
+        <img src="/assets/icons/chevron-right.svg" alt=""/>
+      </button>
+    </footer>
+  </div>
+
+  <!-- Category Selection Modal -->
+  <div id="categoryModal" class="category-modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Select Category</h3>
+        <button id="closeModal" class="close-modal" aria-label="Close">✕</button>
       </div>
-      <div class="hint">Tap card to toggle translation • Swipe ⇄</div>
-    </section>
-  </main>
-
-  <footer class="toolbar">
-    <button id="prevBtn" class="nav-btn" aria-label="Previous">
-      <img src="/assets/icons/chevron-left.svg" alt=""/>
-    </button>
-    <div class="position" id="position">1/1</div>
-    <button id="nextBtn" class="nav-btn" aria-label="Next">
-      <img src="/assets/icons/chevron-right.svg" alt=""/>
-    </button>
-  </footer>
-
-  <section id="categorySheet" class="sheet" hidden>
-    <div class="sheet-header">
-      <div class="sheet-title">Choose a category</div>
-      <button id="closeSheet" class="icon-btn" aria-label="Close">✕</button>
+      <div id="categoryList" class="category-list"></div>
     </div>
-    <div id="categoryGrid" class="category-grid"></div>
-  </section>
+  </div>
 
   <script src="/app.js" type="module"></script>
   <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
