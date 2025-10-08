@@ -4,11 +4,17 @@ const state = {
   items: [],
   index: 0,
   showTranslation: false,
-  currentView: 'categories', // 'categories' or 'cards'
+  currentSetId: null,
 };
 
 const els = {
-  setSelect: document.getElementById('setSelect'),
+  themeToggle: document.getElementById('themeToggle'),
+  categoryBtn: document.getElementById('categoryBtn'),
+  categoryEmoji: document.getElementById('categoryEmoji'),
+  categoryName: document.getElementById('categoryName'),
+  categorySheet: document.getElementById('categorySheet'),
+  categoryGrid: document.getElementById('categoryGrid'),
+  closeSheet: document.getElementById('closeSheet'),
   image: document.getElementById('image'),
   word: document.getElementById('word'),
   sentence: document.getElementById('sentence'),
@@ -18,13 +24,6 @@ const els = {
   prevBtn: document.getElementById('prevBtn'),
   nextBtn: document.getElementById('nextBtn'),
   toast: document.getElementById('toast'),
-  themeToggle: document.getElementById('themeToggle'),
-  themeIcon: document.querySelector('.theme-icon'),
-  categoryScreen: document.getElementById('categoryScreen'),
-  cardScreen: document.getElementById('cardScreen'),
-  categoryGrid: document.getElementById('categoryGrid'),
-  backBtn: document.getElementById('backBtn'),
-  toolbar: document.querySelector('.toolbar'),
 };
 
 async function loadData(){
@@ -32,63 +31,51 @@ async function loadData(){
   if(!res.ok) throw new Error('Failed to load data');
   const data = await res.json();
   state.sets = data.sets || [];
-  renderSetOptions();
-  renderCategories();
-  showView('categories');
+  renderCategoryGrid();
+  const preferred = localStorage.getItem('vocab.set');
+  if (preferred) {
+    await selectSet(preferred);
+  } else {
+    openCategorySheet();
+  }
+  updateCategoryButton();
 }
 
-function renderSetOptions(){
-  els.setSelect.innerHTML = state.sets.map(s => `<option value="${s.id}">${s.emoji} ${escapeHtml(s.name)}</option>`).join('');
-  els.setSelect.addEventListener('change', () => selectSet(els.setSelect.value));
+function renderCategoryGrid(){
+  if(!els.categoryGrid) return;
+  els.categoryGrid.innerHTML = state.sets.map(set => {
+    const count = set.items?.length || 0;
+    const emoji = getEmojiForSet(set);
+    return `<button class="category-card" data-id="${escapeHtml(set.id)}">
+      <span class="emoji">${emoji}</span>
+      <div class="info">
+        <div class="name">${escapeHtml(set.name)}</div>
+        <div class="count">${count} words</div>
+      </div>
+    </button>`;
+  }).join('');
+  Array.from(els.categoryGrid.querySelectorAll('.category-card')).forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      await selectSet(id);
+      closeCategorySheet();
+    });
+  });
 }
 
 async function selectSet(setId){
   const set = state.sets.find(s => s.id === setId) || state.sets[0];
   if(!set){ return; }
   localStorage.setItem('vocab.set', set.id);
+  state.currentSetId = set.id;
   state.items = [...set.items];
   state.order = shuffle(Array.from({length: state.items.length}, (_, i) => i));
   state.index = 0;
   state.showTranslation = false;
   render();
-  els.setSelect.value = localStorage.getItem('vocab.set') || state.sets[0].id;
-  showView('cards');
   ensureProperSizing(); // Ensure sizing after set change
-  toast(`Loaded: ${set.emoji} ${set.name}`);
-}
-
-function renderCategories(){
-  els.categoryGrid.innerHTML = state.sets.map(set => `
-    <div class="category-card" data-set-id="${set.id}">
-      <span class="category-emoji">${set.emoji}</span>
-      <h2 class="category-name">${escapeHtml(set.name)}</h2>
-      <p class="category-count">${set.items.length} words</p>
-    </div>
-  `).join('');
-  
-  // Add click handlers to category cards
-  els.categoryGrid.addEventListener('click', (e) => {
-    const card = e.target.closest('.category-card');
-    if (card) {
-      const setId = card.dataset.setId;
-      selectSet(setId);
-    }
-  });
-}
-
-function showView(view){
-  state.currentView = view;
-  if (view === 'categories') {
-    els.categoryScreen.style.display = 'flex';
-    els.cardScreen.style.display = 'none';
-    els.toolbar.style.display = 'none';
-    els.setSelect.style.display = 'none';
-  } else {
-    els.categoryScreen.style.display = 'none';
-    els.cardScreen.style.display = 'grid';
-    els.toolbar.style.display = 'flex';
-    els.setSelect.style.display = 'block';
-  }
+  toast(`Loaded: ${set.name}`);
+  updateCategoryButton();
 }
 
 function shuffle(arr){
@@ -107,7 +94,10 @@ function current(){
 
 function render(){
   const item = current();
-  if(!item){ return; }
+  if(!item){
+    if (els.position) els.position.textContent = '0/0';
+    return;
+  }
   els.image.src = item.image;
   els.image.alt = item.word;
   els.word.textContent = item.word;
@@ -148,15 +138,19 @@ function ensureProperSizing(){
 }
 
 function next(){
-  state.index = (state.index + 1) % state.items.length;
-  state.showTranslation = false;
-  render();
+  if(state.index < state.items.length - 1){
+    state.index++;
+    state.showTranslation = false;
+    render();
+  }
 }
 
 function prev(){
-  state.index = (state.index - 1 + state.items.length) % state.items.length;
-  state.showTranslation = false;
-  render();
+  if(state.index > 0){
+    state.index--;
+    state.showTranslation = false;
+    render();
+  }
 }
 
 function toggleTranslation(){
@@ -164,34 +158,23 @@ function toggleTranslation(){
   els.translation.hidden = !state.showTranslation;
 }
 
-function initTheme(){
-  const savedTheme = localStorage.getItem('vocab.theme') || 'dark';
-  applyTheme(savedTheme);
-  els.themeToggle.addEventListener('click', toggleTheme);
-}
-
-function toggleTheme(){
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  applyTheme(newTheme);
-  localStorage.setItem('vocab.theme', newTheme);
-}
-
-function applyTheme(theme){
-  document.documentElement.setAttribute('data-theme', theme);
-  els.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
-  // Update meta theme-color for mobile browsers
-  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-  if (metaThemeColor) {
-    metaThemeColor.content = theme === 'dark' ? '#0b1020' : '#f5f7fa';
-  }
-}
-
 function bindControls(){
   els.nextBtn.addEventListener('click', next);
   els.prevBtn.addEventListener('click', prev);
   els.card.addEventListener('click', toggleTranslation);
-  els.backBtn.addEventListener('click', () => showView('categories'));
+  // Theme toggle
+  if (els.themeToggle){
+    els.themeToggle.addEventListener('click', toggleTheme);
+  }
+  // Category sheet controls
+  if (els.categoryBtn){
+    els.categoryBtn.addEventListener('click', ()=>{
+      if(els.categorySheet.hidden) openCategorySheet(); else closeCategorySheet();
+    });
+  }
+  if (els.closeSheet){
+    els.closeSheet.addEventListener('click', closeCategorySheet);
+  }
   // Keyboard support
   window.addEventListener('keydown', (e)=>{
     if(e.key === 'ArrowRight') next();
@@ -270,8 +253,58 @@ function toast(message){
   els.toast._t = setTimeout(()=>{ els.toast.hidden = true; }, 1200);
 }
 
-initTheme();
+// Category helpers
+function getEmojiForSet(set){
+  const id = (set.id || '').toLowerCase();
+  const name = (set.name || '').toLowerCase();
+  if(id.includes('food') || name.includes('food')) return '🍎';
+  if(id.includes('animal') || name.includes('animal')) return '🐾';
+  if(id.includes('travel') || name.includes('travel')) return '✈️';
+  return '📚';
+}
+
+function updateCategoryButton(){
+  if(!els.categoryName || !els.categoryEmoji) return;
+  const set = state.sets.find(s => s.id === state.currentSetId);
+  if(set){
+    els.categoryName.textContent = set.name;
+    els.categoryEmoji.textContent = getEmojiForSet(set);
+  } else {
+    els.categoryName.textContent = 'Choose';
+    els.categoryEmoji.textContent = '📚';
+  }
+}
+
+function openCategorySheet(){
+  if(els.categorySheet){ els.categorySheet.hidden = false; }
+}
+function closeCategorySheet(){
+  if(els.categorySheet){ els.categorySheet.hidden = true; }
+}
+
+// Theme
+function applyTheme(theme){
+  const root = document.documentElement;
+  if(theme === 'light') root.classList.add('light'); else root.classList.remove('light');
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta){ meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#0b1020'); }
+  if(els.themeToggle){ els.themeToggle.textContent = theme === 'light' ? '☀️' : '🌙'; }
+}
+function initTheme(){
+  const stored = localStorage.getItem('vocab.theme');
+  const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  const theme = stored || (systemPrefersLight ? 'light' : 'dark');
+  applyTheme(theme);
+}
+function toggleTheme(){
+  const isLight = document.documentElement.classList.contains('light');
+  const next = isLight ? 'dark' : 'light';
+  localStorage.setItem('vocab.theme', next);
+  applyTheme(next);
+}
+
 bindControls();
+initTheme();
 loadData().then(() => {
   // Ensure proper sizing after initial data load
   setTimeout(ensureProperSizing, 100);
