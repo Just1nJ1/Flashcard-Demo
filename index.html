@@ -6,69 +6,55 @@
   <title>Vocab Cards</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <meta name="theme-color" content="#0b1020">
 </head>
 <body>
-  <!-- Home Screen -->
-  <div id="homeScreen" class="home-screen">
-    <header class="app-header">
-      <div class="brand">Vocab Cards</div>
+  <header class="app-header">
+    <div class="brand">Vocab Cards</div>
+    <div class="header-controls">
       <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
-        <span class="theme-icon">🌙</span>
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
       </button>
-    </header>
-    <main class="home-content">
-      <h2 class="home-title">Select a Category</h2>
-      <div id="categoryGrid" class="category-grid"></div>
-    </main>
-  </div>
-
-  <!-- Card Study Screen -->
-  <div id="cardScreen" class="card-screen" hidden>
-    <header class="app-header">
-      <button id="themeToggleCard" class="theme-toggle" aria-label="Toggle theme">
-        <span class="theme-icon">🌙</span>
-      </button>
-      <button id="setSelectBtn" class="set-select-btn" aria-label="Select vocabulary set">
-        <span id="categoryEmoji" class="category-emoji">🍎</span>
-        <span class="dropdown-arrow">▼</span>
-      </button>
-    </header>
-
-    <main class="viewport" id="viewport">
-      <section class="card" id="card" tabindex="0" aria-live="polite">
-        <div class="media"><img id="image" alt=""/></div>
-        <div class="text">
-          <h1 id="word" class="word">—</h1>
-          <p id="sentence" class="sentence">—</p>
-          <p id="translation" class="translation" hidden>—</p>
-        </div>
-        <div class="hint">Tap card to toggle translation • Swipe ⇄</div>
-      </section>
-    </main>
-
-    <footer class="toolbar">
-      <button id="prevBtn" class="nav-btn" aria-label="Previous">
-        <img src="/assets/icons/chevron-left.svg" alt=""/>
-      </button>
-      <div class="position" id="position">1/1</div>
-      <button id="nextBtn" class="nav-btn" aria-label="Next">
-        <img src="/assets/icons/chevron-right.svg" alt=""/>
-      </button>
-    </footer>
-  </div>
-
-  <!-- Category Selection Modal -->
-  <div id="categoryModal" class="category-modal" hidden>
-    <div class="modal-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Select Category</h3>
-        <button id="closeModal" class="close-modal" aria-label="Close">✕</button>
+      <div class="category-select-container">
+        <button id="categorySelect" class="category-select-button" aria-label="Select category">
+          <span id="selectedCategoryEmoji" class="category-emoji-small">🍎</span>
+          <span id="selectedCategoryName">Food</span>
+          <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6,9 12,15 18,9"/>
+          </svg>
+        </button>
       </div>
-      <div id="categoryList" class="category-list"></div>
     </div>
+  </header>
+
+  <div id="categoryScreen" class="category-screen">
+    <div class="category-grid" id="categoryGrid"></div>
   </div>
+
+  <main class="viewport" id="viewport">
+    <section class="card" id="card" tabindex="0" aria-live="polite">
+      <div class="media"><img id="image" alt=""/></div>
+      <div class="text">
+        <h1 id="word" class="word">—</h1>
+        <p id="sentence" class="sentence">—</p>
+        <p id="translation" class="translation" hidden>—</p>
+      </div>
+      <div class="hint">Tap card to toggle translation • Swipe ⇄</div>
+    </section>
+  </main>
+
+  <footer class="toolbar">
+    <button id="prevBtn" class="nav-btn" aria-label="Previous">
+      <img src="/assets/icons/chevron-left.svg" alt=""/>
+    </button>
+    <div class="position" id="position">1/1</div>
+    <button id="nextBtn" class="nav-btn" aria-label="Next">
+      <img src="/assets/icons/chevron-right.svg" alt=""/>
+    </button>
+  </footer>
 
   <script src="/app.js" type="module"></script>
   <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
